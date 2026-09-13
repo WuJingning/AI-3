@@ -1,11 +1,38 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadConfig, maskWorkflowId, PUBLIC_DIR, redact } from './lib/config.js';
-import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, extensionOf, extractText } from './lib/extract.js';
-import { CozeClient } from './lib/coze.js';
-import { attachDerivedQuotes, normalizeWorkflowResult } from './lib/normalize.js';
-import { buildDemoResult } from './lib/demo.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * 兼容两种目录结构，两者都可以直接 `node server.js` 运行：
+ *   1. 标准结构：server.js + lib/ + public/
+ *   2. 平铺结构：所有文件放在同一层（例如通过 GitHub 网页上传时子目录被拉平）
+ * 平铺时只对外暴露白名单内的前端文件，避免把服务端脚本暴露出去。
+ */
+const LIB_DIR = fs.existsSync(path.join(ROOT_DIR, 'lib', 'config.js'))
+  ? path.join(ROOT_DIR, 'lib')
+  : ROOT_DIR;
+const STATIC_DIR = fs.existsSync(path.join(ROOT_DIR, 'public', 'index.html'))
+  ? path.join(ROOT_DIR, 'public')
+  : ROOT_DIR;
+const FLAT_LAYOUT = STATIC_DIR === ROOT_DIR;
+const FLAT_STATIC_WHITELIST = new Set([
+  'index.html',
+  'styles.css',
+  'app.js',
+  'demo-data.js',
+  'favicon.ico',
+]);
+
+const loadModule = (name) => import(pathToFileURL(path.join(LIB_DIR, name)).href);
+
+const { loadConfig, maskWorkflowId, redact } = await loadModule('config.js');
+const { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, extensionOf, extractText } = await loadModule('extract.js');
+const { CozeClient } = await loadModule('coze.js');
+const { attachDerivedQuotes, normalizeWorkflowResult } = await loadModule('normalize.js');
+const { buildDemoResult } = await loadModule('demo.js');
 
 const config = loadConfig();
 const coze = new CozeClient(config);
@@ -325,8 +352,13 @@ function serveStatic(req, res, pathname) {
     res.writeHead(403).end('Forbidden');
     return;
   }
-  const filePath = path.join(PUBLIC_DIR, relative);
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  // 平铺结构下只允许访问白名单内的前端文件，避免 server.js 与 lib 源码被直接下载
+  if (FLAT_LAYOUT && !FLAT_STATIC_WHITELIST.has(relative)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('未找到该页面');
+    return;
+  }
+  const filePath = path.join(STATIC_DIR, relative);
+  if (!filePath.startsWith(STATIC_DIR)) {
     res.writeHead(403).end('Forbidden');
     return;
   }

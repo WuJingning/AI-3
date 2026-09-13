@@ -119,10 +119,13 @@
         $('statusDetail').textContent = '请在服务端 .env 中配置工作流 ID 与访问密钥';
       }
     } catch (error) {
+      // 没有服务端（例如页面被部署到 GitHub Pages 等纯静态托管）时进入离线演示模式，
+      // 由浏览器本地演示数据保证界面与流程可以完整展示。
+      state.offline = true;
       const chip = $('cozeStatus');
-      chip.dataset.state = 'error';
-      $('cozeStatusText').textContent = '无法连接本地服务';
-      $('statusDetail').textContent = '请确认已通过 node server.js 启动本地服务';
+      chip.dataset.state = 'demo';
+      $('cozeStatusText').textContent = '离线演示模式 · 未连接服务端';
+      $('statusDetail').textContent = '当前为静态页面部署，可完整演示界面；真实审查需启动服务端';
     }
   }
 
@@ -392,6 +395,13 @@
       };
     }
 
+    // 离线（没有服务端）时直接用浏览器本地演示数据，保证静态托管下也能完整演示
+    if (state.offline) {
+      renderLocalDemo(inputs, '');
+      setRunning(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/review', {
         method: 'POST',
@@ -401,16 +411,37 @@
       const data = await response.json();
       handleResponse(data, inputs);
     } catch (error) {
-      finishProgress(false, false);
-      renderError({
-        title: '无法连接本地服务',
-        message: '提交失败：无法连接本地服务，请确认服务已启动后重试。',
-        hint: '',
-        demoAvailable: true,
-      });
+      // 服务端中途不可用时，同样回退到本地演示数据，并明确提示
+      state.offline = true;
+      renderLocalDemo(inputs, '服务端暂时不可用，已自动切换为浏览器本地演示结果。');
     } finally {
       setRunning(false);
     }
+  }
+
+  /** 用浏览器内置的演示数据渲染结果（仅在无法连接服务端时使用，页面会标注“演示结果”）。 */
+  function renderLocalDemo(inputs, notice) {
+    if (!window.ContractReviewDemo || typeof window.ContractReviewDemo.build !== 'function') {
+      finishProgress(false, false);
+      renderError({
+        title: '无法连接本地服务',
+        message: '提交失败：未检测到服务端，且当前页面缺少本地演示数据文件（demo-data.js）。',
+        hint: '请通过 node server.js 启动服务端，或确认 demo-data.js 已随页面一起部署。',
+        demoAvailable: false,
+      });
+      return;
+    }
+    const demo = window.ContractReviewDemo.build({
+      contractType: inputs.contractType,
+      stance: inputs.stance,
+      focus: inputs.focus,
+      extra: inputs.extra,
+      text: state.fileText && !inputs.text ? state.fileText : inputs.text,
+      contractName: inputs.contractName,
+    });
+    if (notice) demo.meta.warnings = [notice, ...(demo.meta.warnings || [])];
+    finishProgress(true, false);
+    renderResult(demo.result, demo.source, demo.meta, inputs);
   }
 
   function readFileAsBase64(file) {

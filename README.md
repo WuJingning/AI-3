@@ -26,6 +26,8 @@ node server.js
 
 Windows 下也可以直接双击 `start.cmd`（会在浏览器中打开 <http://localhost:8787>）。
 
+服务端兼容两种目录结构：标准的 `lib/` + `public/` 结构，或所有文件平铺在同一层——即便打包/上传过程中子目录被拉平，`node server.js` 依然可以运行（平铺时只对外暴露白名单内的前端文件，服务端源码不会被下载）。
+
 如需让其他人访问（局域网共享、临时公网链接、云服务器 + 域名 HTTPS、托管平台），见 [DEPLOY.md](./DEPLOY.md)。服务提供 `GET /healthz` 健康检查接口，可用 `HOST` 环境变量控制监听地址（`0.0.0.0` 对外开放，`127.0.0.1` 仅本机）。
 
 通过 GitHub 部署（推荐）：仓库已内置 CI（语法检查 + 密钥扫描 + 启动冒烟测试）、镜像发布工作流，以及 Render / Fly.io / Railway 的部署配置，操作步骤见 [DEPLOY.md 的 G 节](./DEPLOY.md#g-通过-github-部署推荐路线)。请注意 **GitHub Pages 不适用**：页面必须由服务端持有访问密钥调用工作流。

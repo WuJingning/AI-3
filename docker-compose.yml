@@ -12,9 +12,12 @@ services:
       PORT: 8787
       # 正式环境建议关闭第三方一次性临时链接，改用扣子文件直传
       ALLOW_TEMP_LINK: "false"
-    # 只绑定本机回环地址，由 Nginx / Caddy 负责对外提供 HTTPS
+    # 默认直接对外提供访问（http://服务器IP:8787）。
+    # 如果前面要放 Nginx / Caddy 做 HTTPS 反代，把下面这行改成
+    #   - "127.0.0.1:8787:8787"
+    # 让端口只对本机可见即可。
     ports:
-      - "127.0.0.1:8787:8787"
+      - "8787:8787"
     healthcheck:
       test:
         - CMD
