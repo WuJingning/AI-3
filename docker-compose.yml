@@ -1,0 +1,32 @@
+services:
+  workbench:
+    build: .
+    image: contract-review-workbench:latest
+    container_name: contract-review-workbench
+    restart: unless-stopped
+    # 服务器上单独放置 .env（含访问密钥），不要提交到代码仓库
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      # 正式环境建议关闭第三方一次性临时链接，改用扣子文件直传
+      ALLOW_TEMP_LINK: "false"
+    # 只绑定本机回环地址，由 Nginx / Caddy 负责对外提供 HTTPS
+    ports:
+      - "127.0.0.1:8787:8787"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8787/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

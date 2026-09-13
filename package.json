@@ -1,0 +1,16 @@
+{
+  "name": "contract-review-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI 消保材料智能审查工具（合同类）：上传或粘贴送审合同材料，调用扣子工作流完成消保合规审查，输出风险清单、法条依据与整改建议。",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check:secrets": "node scripts/check-secrets.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

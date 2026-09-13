@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules
+work
+dumps
+*.log
+*.png
+.git
+.github
+.gitignore
+README.md
+DEPLOY.md
+deploy
+start.cmd

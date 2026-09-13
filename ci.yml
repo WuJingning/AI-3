@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 依赖安装（项目无第三方依赖）
+        run: npm install --no-audit --no-fund
+
+      - name: 语法检查
+        run: |
+          node --check server.js
+          for file in lib/*.js public/app.js scripts/*.mjs; do node --check "$file"; done
+
+      - name: 密钥防泄漏扫描
+        run: node scripts/check-secrets.mjs
+
+      - name: 启动冒烟测试（未配置密钥时应以演示模式正常运行）
+        run: |
+          HOST=127.0.0.1 PORT=8787 node server.js &
+          SERVER_PID=$!
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8787/healthz > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8787/healthz
+          curl -fsS http://127.0.0.1:8787/api/status
+          curl -fsS http://127.0.0.1:8787/ | grep -q "brand__title"
+          curl -fsS http://127.0.0.1:8787/ | grep -q "消保材料智能审查工具"
+          kill $SERVER_PID

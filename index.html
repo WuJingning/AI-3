@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="AI 消保材料智能审查工具（合同类）：面向消保审查人员，上传或粘贴送审合同材料，调用扣子工作流自动识别不合规内容，并给出法条依据与整改建议。" />
+    <title>AI 消保材料智能审查工具（合同类）</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231D4ED8'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E审%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="shell topbar__inner">
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true">审</span>
+          <div>
+            <h1 class="brand__title">AI 消保材料智能审查工具（合同类）</h1>
+            <p class="brand__sub">金融消费者权益保护 · 合同类材料智能审查</p>
+          </div>
+        </div>
+        <div class="topbar__side">
+          <div class="status-chip" id="cozeStatus" data-state="loading" role="status">
+            <span class="status-chip__dot" aria-hidden="true"></span>
+            <span id="cozeStatusText">正在检查扣子工作流连接…</span>
+          </div>
+          <p class="topbar__note" id="statusDetail">访问密钥仅保存在服务端，不会下发到浏览器</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="intro">
+        <h2 class="intro__title">AI 消保材料智能审查（合同类）</h2>
+        <p class="intro__lead">上传合同材料，快速获得清晰可执行的审查意见</p>
+        <p class="intro__desc">
+          系统可自动提取送审材料内容、查询企业信息、逐条识别条款风险、核验法律引用，并生成可直接落地到合同文本的修改建议。
+        </p>
+        <ol class="steps" id="steps">
+          <li class="step" data-step="1" data-state="idle">
+            <span class="step__index">1</span>
+            <span class="step__text">
+              <b>提取合同内容</b>
+              <small class="step__state">待执行</small>
+            </span>
+          </li>
+          <li class="step" data-step="2" data-state="idle">
+            <span class="step__index">2</span>
+            <span class="step__text">
+              <b>查询企业信息</b>
+              <small class="step__state">待执行</small>
+            </span>
+          </li>
+          <li class="step" data-step="3" data-state="idle">
+            <span class="step__index">3</span>
+            <span class="step__text">
+              <b>审查合同条款</b>
+              <small class="step__state">待执行</small>
+            </span>
+          </li>
+          <li class="step" data-step="4" data-state="idle">
+            <span class="step__index">4</span>
+            <span class="step__text">
+              <b>生成审查报告</b>
+              <small class="step__state">待执行</small>
+            </span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="card" id="formCard">
+        <div class="card__head">
+          <div>
+            <h3 class="card__title">合同提交</h3>
+            <p class="card__desc">填写审查口径并提交合同，页面会调用已配置的扣子工作流完成分析。</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <label class="field">
+            <span class="field__label">合同类型</span>
+            <select id="contractType" class="control">
+              <option>个人消费借款协议</option>
+              <option>金融服务协议</option>
+              <option>保险协议</option>
+              <option>理财协议</option>
+              <option>金融保密协议</option>
+            </select>
+          </label>
+          <div class="field">
+            <span class="field__label">审查立场</span>
+            <div class="segmented" id="stanceGroup" role="radiogroup" aria-label="审查立场">
+              <button type="button" class="segmented__item" data-stance="甲方" role="radio" aria-checked="false">甲方</button>
+              <button type="button" class="segmented__item" data-stance="乙方" role="radio" aria-checked="false">乙方</button>
+              <button type="button" class="segmented__item is-active" data-stance="中立" role="radio" aria-checked="true">中立</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field__label">重点审查内容 <small class="field__hint">可多选</small></span>
+          <div class="chips" id="focusGroup">
+            <label class="chip"><input type="checkbox" value="利率费用合规" /><span>利率费用合规</span></label>
+            <label class="chip"><input type="checkbox" value="风险提示披露" /><span>风险提示披露</span></label>
+            <label class="chip"><input type="checkbox" value="消费者权责条款" /><span>消费者权责条款</span></label>
+            <label class="chip"><input type="checkbox" value="违约责任与违约金" /><span>违约责任与违约金</span></label>
+            <label class="chip"><input type="checkbox" value="个人信息授权" /><span>个人信息授权</span></label>
+            <label class="chip"><input type="checkbox" value="合同解除终止" /><span>合同解除终止</span></label>
+          </div>
+        </div>
+
+        <label class="field">
+          <span class="field__label">补充审查要求 <small class="field__hint">选填</small></span>
+          <textarea
+            id="extra"
+            class="control control--area"
+            rows="3"
+            placeholder="例如：请重点核查综合年化利率是否超过监管上限，并给出可以直接替换的条款文本。"
+          ></textarea>
+        </label>
+
+        <div class="intake">
+          <div class="field">
+            <span class="field__label">上传合同文件</span>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="点击或拖拽上传合同文件">
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md" hidden />
+              <span class="dropzone__icon" aria-hidden="true">⇪</span>
+              <p class="dropzone__title">点击上传或拖拽文件到此处</p>
+              <p class="dropzone__hint">支持 PDF、Word、TXT、MD 文件，单个文件不超过 10MB</p>
+              <div class="file-chip" id="fileChip" hidden>
+                <span class="file-chip__name" id="fileName"></span>
+                <span class="file-chip__size" id="fileSize"></span>
+                <button type="button" class="file-chip__remove" id="removeFile" aria-label="移除文件">移除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field__label">粘贴合同文本</span>
+            <textarea
+              id="contractText"
+              class="control control--area control--paste"
+              rows="9"
+              placeholder="可以直接粘贴合同全文，系统会连同合同类型、审查立场与重点审查内容一起提交给扣子工作流。"
+            ></textarea>
+            <div class="paste__foot">
+              <span id="charCount" class="muted">0 字</span>
+              <button type="button" class="link-btn" id="clearText">清空文本</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert--error" id="formError" hidden></div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn--primary" id="submitBtn">开始智能审查</button>
+          <button type="button" class="btn btn--ghost" id="resetBtn">重置</button>
+          <label class="switch">
+            <input type="checkbox" id="allowTempLink" checked />
+            <span>文件直传不可用时，允许通过一次性临时链接提交给工作流（便于演示）</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card progress-card" id="progressCard" hidden aria-live="polite">
+        <div class="progress-card__head">
+          <span class="spinner" id="progressSpinner" aria-hidden="true"></span>
+          <span class="progress-icon" id="progressIcon" hidden aria-hidden="true">✓</span>
+          <div>
+            <h3 class="card__title" id="progressTitle">正在审查中</h3>
+            <p class="card__desc" id="progressMessage">正在提取文本并逐项分析合同条款，请稍候…</p>
+          </div>
+        </div>
+        <ul class="progress-steps" id="progressSteps"></ul>
+      </section>
+
+      <section id="results" hidden>
+        <div class="alert alert--warn" id="demoBanner" hidden>
+          <b>当前为演示结果</b>
+          <span id="demoBannerText">未获取到扣子工作流的真实返回，页面使用本地示例数据展示。</span>
+        </div>
+        <div class="alert alert--error" id="errorBanner" hidden>
+          <b id="errorTitle">调用未完成</b>
+          <span id="errorMessage"></span>
+          <p class="alert__hint" id="errorHint"></p>
+          <div class="alert__actions" id="errorActions"></div>
+        </div>
+        <div class="alert alert--info" id="warnBanner" hidden></div>
+
+        <div class="conclusion" id="conclusion">
+          <div class="conclusion__main">
+            <span class="conclusion__badge" id="conclusionBadge">审查完成</span>
+            <div>
+              <h3 class="conclusion__title" id="conclusionTitle">审查结论</h3>
+              <p class="conclusion__text" id="conclusionText"></p>
+            </div>
+          </div>
+          <div class="counts" id="counts">
+            <div class="count count--high"><b id="countHigh">0</b><span>高风险</span></div>
+            <div class="count count--medium"><b id="countMedium">0</b><span>中风险</span></div>
+            <div class="count count--low"><b id="countLow">0</b><span>低风险</span></div>
+            <div class="count count--unknown" id="countUnknownWrap" hidden><b id="countUnknown">0</b><span>未分级</span></div>
+          </div>
+        </div>
+
+        <div class="meta-grid" id="metaGrid"></div>
+
+        <div class="grid-2 grid-2--wide">
+          <div class="card verify-card">
+            <div class="card__head card__head--tight">
+              <h3 class="card__title">法律引用核验</h3>
+              <span class="pill" id="legalStatus">已完成</span>
+            </div>
+            <p class="verify-card__summary" id="legalSummary"></p>
+            <ul class="kv-list" id="legalItems"></ul>
+          </div>
+          <div class="card verify-card">
+            <div class="card__head card__head--tight">
+              <h3 class="card__title">企业信息核验</h3>
+              <span class="pill" id="enterpriseStatus">已完成</span>
+            </div>
+            <p class="verify-card__summary" id="enterpriseSummary"></p>
+            <ul class="kv-list" id="enterpriseItems"></ul>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <section class="card pane pane--contract">
+            <div class="card__head card__head--tight">
+              <div>
+                <h3 class="card__title">合同原文</h3>
+                <p class="card__desc" id="contractMeta"></p>
+              </div>
+              <div class="legend">
+                <span class="legend__item"><i class="legend__dot legend__dot--high"></i>高风险</span>
+                <span class="legend__item"><i class="legend__dot legend__dot--medium"></i>中风险</span>
+                <span class="legend__item"><i class="legend__dot legend__dot--low"></i>低风险</span>
+              </div>
+            </div>
+            <div class="pane__body contract-body" id="contractBody"></div>
+          </section>
+
+          <section class="card pane pane--opinions">
+            <div class="card__head card__head--tight pane__head">
+              <div>
+                <h3 class="card__title">风险清单 <span class="muted" id="opinionCount"></span></h3>
+                <p class="card__desc">点击任一意见可在左侧定位对应原文。</p>
+              </div>
+              <button type="button" class="btn btn--small btn--ghost" id="copyAll">一键复制全部意见</button>
+            </div>
+            <div class="filters" id="levelFilters" role="tablist">
+              <button type="button" class="filter is-active" data-level="全部" role="tab">全部 <em id="filterAll">0</em></button>
+              <button type="button" class="filter" data-level="高" role="tab">高风险 <em id="filterHigh">0</em></button>
+              <button type="button" class="filter" data-level="中" role="tab">中风险 <em id="filterMedium">0</em></button>
+              <button type="button" class="filter" data-level="低" role="tab">低风险 <em id="filterLow">0</em></button>
+              <button type="button" class="filter" data-level="未分级" role="tab" id="filterUnknownBtn" hidden>
+                未分级 <em id="filterUnknown">0</em>
+              </button>
+            </div>
+            <div class="pane__body opinion-list" id="opinionList"></div>
+          </section>
+        </div>
+
+        <details class="card raw-card" id="rawCard" hidden>
+          <summary>查看工作流原始输出</summary>
+          <pre id="rawOutput"></pre>
+        </details>
+
+        <div class="result-actions">
+          <button type="button" class="btn btn--primary" id="copyReport">复制审查意见书</button>
+          <button type="button" class="btn btn--ghost" id="exportPdf">导出 PDF</button>
+          <a class="btn btn--ghost" id="reportLink" href="#" target="_blank" rel="noopener" hidden>查看飞书完整审查报告</a>
+          <button type="button" class="btn btn--ghost" id="reviewAgain">重新审查</button>
+        </div>
+        <p class="disclaimer">
+          本页审查意见由 AI 工作流生成，法律引用核验与企业信息核验仅供参考，不构成正式法律意见，重要合同请在定稿前由法务人员复核。
+        </p>
+      </section>
+
+      <section class="card" id="historyCard">
+        <div class="card__head card__head--tight">
+          <div>
+            <h3 class="card__title">审查记录</h3>
+            <p class="card__desc">仅保存在当前浏览器本地，最多保留最近 8 次记录。</p>
+          </div>
+          <button type="button" class="btn btn--small btn--ghost" id="clearHistory">清空记录</button>
+        </div>
+        <div class="history-table" id="historyTable"></div>
+      </section>
+
+      <footer class="page-foot">
+        <span>AI 消保材料智能审查工具（合同类） · 扣子工作流驱动</span>
+        <span>访问密钥仅用于服务端调用，不会出现在页面或浏览器代码中</span>
+      </footer>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>

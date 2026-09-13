@@ -1,0 +1,18 @@
+# Caddy 自动申请并续期 HTTPS 证书，适合一台服务器直接对外提供访问
+# 域名通过环境变量 SITE_ADDRESS 传入（见 deploy/docker-compose.caddy.yml），
+# 也可以直接把下方 {$SITE_ADDRESS:...} 改成你的域名，并确认域名已解析到本机
+
+{$SITE_ADDRESS:your-domain.com} {
+	encode zstd gzip
+
+	# 工作流单次调用可能持续 30–60 秒，Caddy 默认不设代理超时，无需额外配置
+	reverse_proxy workbench:8787
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

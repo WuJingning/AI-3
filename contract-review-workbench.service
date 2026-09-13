@@ -1,0 +1,33 @@
+# 不使用容器、直接用 systemd 托管时使用本文件
+# 部署到 /etc/systemd/system/contract-review-workbench.service 后执行：
+#   systemctl daemon-reload && systemctl enable --now contract-review-workbench
+
+[Unit]
+Description=Contract Review Workbench (合同审查工作台)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=workbench
+Group=workbench
+WorkingDirectory=/opt/contract-review-workbench
+# 访问密钥写在这个文件里（仅服务器本地可读，权限 600）
+EnvironmentFile=/opt/contract-review-workbench/.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/contract-review-workbench
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

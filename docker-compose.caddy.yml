@@ -1,0 +1,34 @@
+# 应用 + Caddy（自动 HTTPS）一起运行：
+#   cd 项目目录
+#   DOMAIN=your-domain.com docker compose -f docker-compose.yml -f deploy/docker-compose.caddy.yml up -d
+services:
+  workbench:
+    # 沿用 docker-compose.yml 中 127.0.0.1:8787 的端口绑定：
+    # 仅本机可见，便于在服务器上直接 curl 调试，不影响 Caddy 通过容器网络访问。
+    expose:
+      - "8787"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: contract-review-caddy
+    restart: unless-stopped
+    depends_on:
+      - workbench
+    environment:
+      SITE_ADDRESS: ${DOMAIN:?请通过 DOMAIN 环境变量传入域名}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,22 @@
+# Render 蓝图：在 Render 控制台选择 “New → Blueprint”，指向本仓库即可一键部署。
+# COZE_API_TOKEN 使用 sync: false，部署时由你在控制台填写，不会写入仓库。
+services:
+  - type: web
+    name: contract-review-workbench
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: COZE_WORKFLOW_ID
+        value: '7684698570696376330'
+      - key: COZE_API_BASE
+        value: https://api.coze.cn
+      - key: COZE_API_TOKEN
+        sync: false
+      - key: ALLOW_TEMP_LINK
+        value: 'false'
+      - key: HOST
+        value: 0.0.0.0
